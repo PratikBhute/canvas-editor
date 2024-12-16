@@ -1,0 +1,30 @@
+<div class="actionBar">
+  <div
+    *ngFor="let t of toolsEnum | keyvalue; let index = index"
+    class="inputWrapper"
+    [class.selected]="tool === t.value"
+    (click)="setTool(t.value)"
+  >
+    <ng-container [ngSwitch]="t.value">
+      <mat-icon *ngSwitchCase="toolsEnum.boundingBox">crop_square</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.pan">pan_tool</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.selection">mouse</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.rectangle">rectangle</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.line">horizontal_rule</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.erease">clear</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.pencil">edit</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.text">title</mat-icon>
+
+      <ng-container *ngSwitchCase="toolsEnum.ImportImage">
+        <mat-icon (click)="handleImageButtonClick()">upload_file</mat-icon>
+        <input
+          class="inputStyle"
+          type="file"
+          id="imageUploadInput"
+          accept="image/*"
+          (change)="handleImageUpload($event)"
+        />
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

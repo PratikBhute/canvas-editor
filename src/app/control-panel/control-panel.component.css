@@ -1,0 +1,41 @@
+.controlPanel {
+    width: 300px;
+    display: flex;
+    gap: 20px;
+    position: absolute;
+    z-index: 2;
+    bottom: 25px;
+    left: 35px;
+  }
+  
+  .controlPanel button {
+    padding: 10px 15px;
+    background-color: rgb(65, 62, 62) ;
+  }
+  
+  .controlPanel button:hover {
+    background-color: gray ;
+  }
+  
+  .zoomPanel {
+    border-radius: 8px;
+    display: flex;
+    background-color: rgb(196, 189, 189) ;
+    
+  }
+  
+  .zoomPanel button,
+  .editPanel button,
+  .link {
+    border: none;
+    color: #27272c;
+    font-size: 0.9em;
+    background-color: transparent;
+  }
+ 
+  .editPanel {
+    border-radius: 8px;
+    display: flex;
+    background-color: rgb(196, 189, 189);
+  }
+ 

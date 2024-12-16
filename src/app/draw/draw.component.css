@@ -1,0 +1,10 @@
+.text-input {
+    position: absolute;
+    z-index: 1000;
+    border: 1px solid #ccc;
+    padding: 5px;
+    background-color: white;
+    resize: none;
+    outline: none;
+    cursor: pointer;
+  }

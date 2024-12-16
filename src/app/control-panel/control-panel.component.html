@@ -1,0 +1,47 @@
+<div class="controlPanel">
+  <div class="zoomPanel">
+    <button 
+      (click)="onZoomOut()" 
+      aria-label="Zoom Out"
+      title="Zoom Out"
+    >
+    <mat-icon>remove</mat-icon>
+    </button>
+    
+    <button 
+      (click)="resetScale()" 
+      [attr.aria-label]="'Set scale to 100%'"
+      title="Set scale to 100%"
+    >
+      {{ formatScale() }}
+    </button>
+    
+    <button 
+      (click)="onZoomIn()" 
+      aria-label="Zoom In"
+      title="Zoom In"
+    >
+    <mat-icon>add</mat-icon>
+    </button>
+  </div>
+  
+  <div class="editPanel">
+    <button 
+      (click)="undo()" 
+      aria-label="Undo last action"
+      title="Undo last action"
+    >
+    <mat-icon>undo</mat-icon>
+    </button>
+    
+    <button 
+      (click)="redo()" 
+      aria-label="Redo last action"
+      title="Redo last action"
+    >
+    <mat-icon>redo</mat-icon>
+    </button>
+
+    
+  </div>
+</div>
