@@ -1,4 +1,4 @@
-.text-input {
+/* .text-input {
     position: absolute;
     z-index: 1000;
     border: 1px solid #ccc;
@@ -7,4 +7,67 @@
     resize: none;
     outline: none;
     cursor: pointer;
+  } */
+
+
+  /* Base Canvas Styles */
+canvas {
+  display: block;
+  margin: 0 auto;
+  background-color: white;
+  box-shadow: 5px 5px 4px 6px rgba(14, 11, 11, 0.1);
+}
+
+/* Desktop Screens */
+@media screen and (min-width: 1200px) {
+  canvas {
+    width: 1300px;
+    height: 800px;
+    max-width: 100%;
+    max-height: 97vh;
   }
+}
+
+/* Laptop Screens */
+@media screen and (min-width: 992px) and (max-width: 1199px) {
+  canvas {
+    width: 1000px;
+    height: 700px;
+    max-width: 100%;
+    max-height: 90vh;
+  }
+}
+
+/* Tablet Screens */
+@media screen and (min-width: 768px) and (max-width: 991px) {
+  canvas {
+    width: 90vw;
+    height: 600px;
+    max-height: 120vh;
+  }
+}
+
+/* Mobile Landscape */
+@media screen and (min-width: 576px) and (max-width: 767px) {
+  canvas {
+    width: 95vw;
+    height: 915px;
+    max-height:915px;
+  }
+}
+
+/* Mobile Portrait */
+@media screen and (max-width: 575px) {
+  canvas {
+    width: 100vw;
+    height: 400px;
+    max-height: 50vh;
+  }
+}
+
+/* Ensure canvas is responsive and maintains aspect ratio */
+canvas {
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast; /* Webkit rendering optimization */
+  image-rendering: crisp-edges; /* Better image scaling */
+}

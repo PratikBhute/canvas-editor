@@ -46,3 +46,30 @@
     font-size: 0.7em;
     color: var(--secondary-text-color);
   }
+
+  /* Desktop and Tablet Styles (Default Horizontal Bottom Center) */
+@media screen and (min-width: 768px) {
+  .actionBar {
+    flex-direction: row;
+    width: auto;
+    max-width: 90%;
+  }
+}
+
+/* Mobile Styles (Vertical Left-Side) */
+@media screen and (max-width: 767px) {
+  .actionBar {
+    flex-direction: column;
+    left: 10px;
+    bottom: 50%;
+    transform: translateY(50%);
+    max-width: 60px;
+    padding: 10px 5px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .actionBar .inputWrapper {
+    margin-bottom: 10px;
+  }
+}

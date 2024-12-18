@@ -88,6 +88,8 @@ export interface DrawingElement {
     | 'text'
     | 'pan';
   data: {
+    startPoint?: any;
+    endPoint?: any;
     path?: PointType[];
     start?: PointType;
     end?: PointType;

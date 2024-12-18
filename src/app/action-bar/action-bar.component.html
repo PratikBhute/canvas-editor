@@ -6,17 +6,17 @@
     (click)="setTool(t.value)"
   >
     <ng-container [ngSwitch]="t.value">
-      <mat-icon *ngSwitchCase="toolsEnum.boundingBox">crop_square</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.pan">pan_tool</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.selection">mouse</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.rectangle">rectangle</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.line">horizontal_rule</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.erease">clear</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.pencil">edit</mat-icon>
-      <mat-icon *ngSwitchCase="toolsEnum.text">title</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.boundingBox" title="Bounding Box">crop_square</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.pan" title="Pan">pan_tool</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.selection" title="select">mouse</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.rectangle" title="Rectangle">rectangle</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.line" title="Line">horizontal_rule</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.erease" title="Erease">edit_off</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.pencil" title="Sketck">edit</mat-icon>
+      <mat-icon *ngSwitchCase="toolsEnum.text" title="Text box">title</mat-icon>
 
       <ng-container *ngSwitchCase="toolsEnum.ImportImage">
-        <mat-icon (click)="handleImageButtonClick()">upload_file</mat-icon>
+        <mat-icon (click)="handleImageButtonClick()" title="Import Image">upload_file</mat-icon>
         <input
           class="inputStyle"
           type="file"
@@ -25,6 +25,7 @@
           (change)="handleImageUpload($event)"
         />
       </ng-container>
+      <span class="span-style">{{index + 1}}</span>
     </ng-container>
   </div>
 </div>
