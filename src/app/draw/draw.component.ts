@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -5,19 +6,17 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ActionBarComponent } from '../action-bar/action-bar.component';
+import { ControlPanelComponent } from '../control-panel/control-panel.component';
+import { HistoryService } from '../services/history.service';
 import {
   BoundingBox,
   DrawingElement,
-  ElementType,
   PointType,
   // ToolCursors,
   Tools,
-  ToolsType,
+  ToolsType
 } from '../types/draw-types';
-import { HistoryService } from '../services/history.service';
-import { ControlPanelComponent } from '../control-panel/control-panel.component';
-import { ActionBarComponent } from '../action-bar/action-bar.component';
 
 @Component({
   selector: 'app-draw',
@@ -33,40 +32,32 @@ export class AppDrawComponent implements OnInit {
 
   @ViewChild('canvas', { static: true })
   canvasRef!: ElementRef<HTMLCanvasElement>;
-  // Panning properties
   tool: ToolsType = Tools.selection;
-  // currentTool: ToolsType = Tools.selection;
-
-  isDrawing = false;
-  pencilColor = '#000000'; // Default black
-  pencilLineWidth = 2;
-  eraseRadius = 20;
-  // Rectangle drawing properties
-  // Line drawing properties
-  startPoint: PointType | null = null;
-  drawPath: PointType[] = [];
-  lineStartPoint: PointType | null = null;
-
+  private isDrawing = false;
+  private pencilColor = '#000000'; // Default black
+  private pencilLineWidth = 3;
+  private eraseRadius = 20;
+  private startPoint: PointType | null = null;
+  private drawPath: PointType[] = [];
+  private lineStartPoint: PointType | null = null;
   private drawingElements: DrawingElement[] = [];
   private previewCtx: CanvasRenderingContext2D | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
-  initialTool: ToolsType = Tools.selection;
-  panOffset = { x: 0, y: 0 };
+  private initialTool: ToolsType = Tools.selection;
+  private panOffset = { x: 0, y: 0 };
   // action: ActionsType = 'none';
   scale = 1;
-  uploadedImage: HTMLImageElement | null = null;
-
   // History management
   private actionHistory: DrawingElement[][] = [];
   private currentHistoryIndex = -1;
-
   // Bounding Box specific properties
-  boundingBoxes: BoundingBox[] = [];
-  currentBoundingBox: BoundingBox | null = null;
-  boundingBoxColor = 'blue'; // Default red color
-
-  isPanning = false;
-  lastPanPosition: { x: number; y: number } | null = null;
+  private boundingBoxes: BoundingBox[] = [];
+  private currentBoundingBox: BoundingBox | null = null;
+  private boundingBoxColor = 'blue'; // Default red color
+  //Paning Property
+  private isPanning = false;
+  private lastPanPosition: { x: number; y: number } | null = null;
+  //  private setlastPanPosition: { x: number; y: number; };
 
   constructor(private historyService: HistoryService) {
     this.tool = this.initialTool;
@@ -78,7 +69,6 @@ export class AppDrawComponent implements OnInit {
     this.setupEventListeners();
   }
   private setupEventListeners() {
-    // Remove previous listener and replace with more comprehensive one
     window.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
   }
 
@@ -95,30 +85,45 @@ export class AppDrawComponent implements OnInit {
     window.addEventListener('keydown', this.handleUndoRedo);
   }
 
-  private clearPreview() {
-    if (!this.previewCtx) return;
-    this.previewCtx.clearRect(
-      0,
-      0,
-      this.previewCtx.canvas.width,
-      this.previewCtx.canvas.height
-    );
+  private smoothPath(path: PointType[], smoothingFactor: number = 0.3): PointType[] {
+    if (path.length < 3) return path; // No smoothing needed for less than 3 points
+  
+    const smoothedPath: PointType[] = [];
+    smoothedPath.push(path[0]); // Keep the first point
+  
+    for (let i = 1; i < path.length - 1; i++) {
+      const prev = path[i - 1];
+      const curr = path[i];
+      const next = path[i + 1];
+  
+      // Calculate control points
+      const controlPoint1 = {
+        x: curr.x + smoothingFactor * (next.x - prev.x),
+        y: curr.y + smoothingFactor * (next.y - prev.y),
+      };
+  
+      const controlPoint2 = {
+        x: next.x - smoothingFactor * (next.x - prev.x),
+        y: next.y - smoothingFactor * (next.y - prev.y),
+      };
+  
+      // Add a smoothed curve
+      smoothedPath.push(controlPoint1, controlPoint2, next);
+    }
+  
+    return smoothedPath;
   }
+  
 
   private drawAllElements() {
     if (!this.ctx) return;
 
-    // Clear the canvas
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    // Apply scaling and drawing logic
+   
     this.ctx.save();
-
     // Apply scale first, then translation
+    this.ctx.translate(this.panOffset.x, this.panOffset.y);
     this.ctx.scale(this.scale, this.scale);
-    this.ctx.translate(
-      this.panOffset.x / this.scale,
-      this.panOffset.y / this.scale
-    );
     // Redraw all saved elements
     this.drawingElements.forEach((element) => {
       this.ctx!.beginPath();
@@ -138,7 +143,7 @@ export class AppDrawComponent implements OnInit {
           }
           break;
         case 'rectangle':
-          if (element.data.start && element.data.end) {      
+          if (element.data.start && element.data.end) {
             const width = element.data.end.x - element.data.start.x;
             const height = element.data.end.y - element.data.start.y;
             this.ctx!.strokeRect(
@@ -216,35 +221,39 @@ export class AppDrawComponent implements OnInit {
   getMouseCoordinates(event: MouseEvent) {
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
-    
+
     // Calculate the scaling factors
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-  
+
     // Raw mouse position on canvas (without scaling)
     const rawMouseX = (event.clientX - rect.left) * scaleX;
     const rawMouseY = (event.clientY - rect.top) * scaleY;
-  
+
     // Adjust for pan and scale
-    const adjustedX = (rawMouseX - this.panOffset.x) / this.scale;
-    const adjustedY = (rawMouseY - this.panOffset.y) / this.scale;
-  
-    console.log('Mouse Coordinates Diagnostic:', {
-      clientX: event.clientX,
-      clientY: event.clientY,
-      rectLeft: rect.left,
-      rectTop: rect.top,
-      scaleX: scaleX,
-      scaleY: scaleY,
-      rawMouseX: rawMouseX,
-      rawMouseY: rawMouseY,
-      panOffsetX: this.panOffset.x,
-      panOffsetY: this.panOffset.y,
-      currentScale: this.scale,
-      adjustedX: adjustedX,
-      adjustedY: adjustedY
-    });
-  
+    // const adjustedX = (rawMouseX - this.panOffset.x) / this.scale;
+    // const adjustedY = (rawMouseY - this.panOffset.y) / this.scale;
+
+    // Adjust for both pan and zoom
+    const adjustedX = rawMouseX / this.scale - this.panOffset.x / this.scale;
+    const adjustedY = rawMouseY / this.scale - this.panOffset.y / this.scale;
+
+    // console.log('Mouse Coordinates Diagnostic:', {
+    //   clientX: event.clientX,
+    //   clientY: event.clientY,
+    //   rectLeft: rect.left,
+    //   rectTop: rect.top,
+    //   scaleX: scaleX,
+    //   scaleY: scaleY,
+    //   rawMouseX: rawMouseX,
+    //   rawMouseY: rawMouseY,
+    //   panOffsetX: this.panOffset.x,
+    //   panOffsetY: this.panOffset.y,
+    //   currentScale: this.scale,
+    //   adjustedX: adjustedX,
+    //   adjustedY: adjustedY,
+    // });
+
     return { clientX: adjustedX, clientY: adjustedY };
   }
 
@@ -283,16 +292,14 @@ export class AppDrawComponent implements OnInit {
       0,
       this.currentHistoryIndex + 1
     );
-
     // Deep clone the current drawing elements
     const currentState = JSON.parse(JSON.stringify(this.drawingElements));
-
     this.actionHistory.push(currentState);
     this.currentHistoryIndex++;
   }
 
   private handleGlobalKeydown(event: KeyboardEvent) {
-    // Undo: Ctrl+Z
+  
     if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
       event.preventDefault();
       this.undo();
@@ -341,30 +348,26 @@ export class AppDrawComponent implements OnInit {
     this.lineStartPoint = { x, y };
 
     if (!this.ctx) return;
-    // Save the context and apply transformations
-    this.ctx.save();
-    this.ctx.scale(this.scale, this.scale);
-    // this.ctx.scale(this.scale - x, this.scale + y);
-    this.ctx.translate(
-      this.panOffset.x / this.scale,
-      this.panOffset.y / this.scale
-    );
 
+    // Don't apply transformations here since coordinates are already adjusted
     this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
     this.ctx.strokeStyle = this.pencilColor;
     this.ctx.lineWidth = this.pencilLineWidth / this.scale;
     this.ctx.lineCap = 'round';
   }
-
   //Continue
   private drawLinePreview(x: number, y: number) {
     if (!this.ctx || !this.lineStartPoint) return;
-    // Clear previous preview and redraw existing elements
-    this.clearPreview();
+
     this.drawAllElements();
 
-    // Draw preview line
+    this.ctx.save();
+
+    this.ctx.scale(this.scale, this.scale);
+    this.ctx.translate(
+      this.panOffset.x / this.scale,
+      this.panOffset.y / this.scale
+    );
     this.ctx.beginPath();
     this.ctx.moveTo(this.lineStartPoint.x, this.lineStartPoint.y);
     this.ctx.lineTo(x, y);
@@ -372,18 +375,15 @@ export class AppDrawComponent implements OnInit {
     this.ctx.lineWidth = this.pencilLineWidth / this.scale;
     this.ctx.lineCap = 'round';
     this.ctx.stroke();
+
+    // Restore context state
+    this.ctx.restore();
   }
   // Finish
   private finishLineDrawing(x: number, y: number) {
     if (!this.ctx || !this.lineStartPoint) return;
 
-    this.drawAllElements();
-    console.log('finish');
-    this.ctx.lineTo(x, y);
-    this.ctx.restore();
-    this.ctx.stroke();
-
-    // Save the drawing element
+    // Add the line to drawing elements
     this.drawingElements.push({
       type: 'line',
       data: {
@@ -405,12 +405,13 @@ export class AppDrawComponent implements OnInit {
       },
     });
 
-    // Redraw all elements to ensure persistence
+    // Redraw all elements
     this.drawAllElements();
-    // Save to history after drawing
+
+    // Save to history
     this.finishDrawing();
   }
-
+ //  Start Continue and Finish Method for Pencil Sketch
   private startPencilDrawing(x: number, y: number) {
     this.isDrawing = true;
     this.drawPath = [{ x, y }];
@@ -423,7 +424,7 @@ export class AppDrawComponent implements OnInit {
       this.panOffset.x / this.scale,
       this.panOffset.y / this.scale
     );
-// 
+    //
     this.ctx.beginPath();
     // this.ctx.moveTo(x, y);
     // this.ctx.strokeStyle = this.pencilColor;
@@ -438,6 +439,7 @@ export class AppDrawComponent implements OnInit {
     this.ctx.lineTo(x, y);
     this.ctx.stroke();
   }
+  
   private finishPencilDrawing(x: number, y: number) {
     if (!this.ctx) return;
     this.drawPath.push({ x, y });
@@ -468,27 +470,32 @@ export class AppDrawComponent implements OnInit {
     this.finishDrawing();
   }
 
+   //  Start Continue and finish Method for Rectangle
   private startRectangleDrawing(x: number, y: number) {
     this.isDrawing = true;
     this.startPoint = { x, y };
-    // this.drawPath = [{ x, y }];
 
     if (!this.ctx) return;
-    // Save the context and apply transformations
-    this.ctx.save();
-    // this.ctx.scale(this.scale + x, this.scale - y);
-    this.ctx.scale(this.scale, this.scale);
-    // this.ctx.translate(
-    //   this.panOffset.x / this.scale,
-    //   this.panOffset.y / this.scale
-    // );
+    // Don't apply transformations here since coordinates are already adjusted
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.pencilColor;
+    this.ctx.lineWidth = this.pencilLineWidth / this.scale;
   }
   private drawRectanglePreview(x: number, y: number) {
     if (!this.ctx || !this.startPoint) return;
 
-    // Clear previous preview and redraw existing elements
-    this.clearPreview();
+    // Clear and redraw existing elements
     this.drawAllElements();
+
+    // Save current context state
+    this.ctx.save();
+
+    // Apply transformations
+    this.ctx.scale(this.scale, this.scale);
+    this.ctx.translate(
+      this.panOffset.x / this.scale,
+      this.panOffset.y / this.scale
+    );
 
     const width = x - this.startPoint.x;
     const height = y - this.startPoint.y;
@@ -496,21 +503,14 @@ export class AppDrawComponent implements OnInit {
     this.ctx.strokeStyle = this.pencilColor;
     this.ctx.lineWidth = this.pencilLineWidth / this.scale;
     this.ctx.strokeRect(this.startPoint.x, this.startPoint.y, width, height);
+
+    // Restore context state
+    this.ctx.restore();
   }
   private finishRectangleDrawing(x: number, y: number) {
     if (!this.ctx || !this.startPoint) return;
 
-    const width = x - this.startPoint.x;
-    const height = y - this.startPoint.y;
-
-    this.ctx.strokeStyle = this.pencilColor;
-    this.ctx.lineWidth = this.pencilLineWidth / this.scale;
-    this.ctx.strokeRect(this.startPoint.x, this.startPoint.y, width, height);
-
-    // Restore the context
-    this.ctx.restore();
-
-    // Save the drawing element
+    // Add the rectangle to drawing elements
     this.drawingElements.push({
       type: 'rectangle',
       data: {
@@ -523,28 +523,25 @@ export class AppDrawComponent implements OnInit {
 
     // Redraw all elements to ensure persistence
     this.drawAllElements();
+
     // Save to history after drawing
     this.finishDrawing();
   }
-
-  // Bounding Box
+  //  Start Continue and finish Method for Line Bounding Box
   private startBoundingBoxDrawing(x: number, y: number) {
     this.isDrawing = true;
     this.currentBoundingBox = {
       id: `bbox-${Date.now()}`,
       start: { x, y },
-      end: { x, y }, // Initialize end point
+      end: { x, y },
       title: '',
     };
 
     if (!this.ctx) return;
-    // Save the context and apply transformations
-    this.ctx.save();
-    this.ctx.scale(this.scale, this.scale);
-    this.ctx.translate(
-      this.panOffset.x / this.scale,
-      this.panOffset.y / this.scale
-    );
+    // Don't apply transformations here since coordinates are already adjusted
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.boundingBoxColor;
+    this.ctx.lineWidth = 2 / this.scale;
   }
 
   private drawBoundingBox(bbox: BoundingBox) {
@@ -594,14 +591,23 @@ export class AppDrawComponent implements OnInit {
   private drawBoundingBoxPreview(x: number, y: number) {
     if (!this.ctx || !this.currentBoundingBox) return;
 
-    // Clear previous preview and redraw existing elements
-    this.clearPreview();
+    // Clear and redraw existing elements
     this.drawAllElements();
 
-    // Draw bounding box preview
+    // Save current context state
+    this.ctx.save();
+
+    // Apply transformations
+    this.ctx.scale(this.scale, this.scale);
+    this.ctx.translate(
+      this.panOffset.x / this.scale,
+      this.panOffset.y / this.scale
+    );
+
     const width = x - this.currentBoundingBox.start.x;
     const height = y - this.currentBoundingBox.start.y;
 
+    // Draw bounding box preview
     this.ctx.strokeStyle = this.boundingBoxColor;
     this.ctx.lineWidth = 2 / this.scale;
     this.ctx.strokeRect(
@@ -610,13 +616,13 @@ export class AppDrawComponent implements OnInit {
       width,
       height
     );
+
+    // Restore context state
+    this.ctx.restore();
   }
 
   private finishBoundingBoxDrawing(x: number, y: number) {
     if (!this.ctx || !this.currentBoundingBox) return;
-
-    // Restore the context
-    this.ctx.restore();
 
     // Ensure end point is set
     this.currentBoundingBox.end = { x, y };
@@ -629,7 +635,7 @@ export class AppDrawComponent implements OnInit {
     // Update the current bounding box with title
     this.currentBoundingBox.title = title;
 
-    // Add to bounding boxes
+    // Add to bounding boxes array
     this.boundingBoxes.push(this.currentBoundingBox);
 
     // Add to drawing elements for history
@@ -668,7 +674,6 @@ export class AppDrawComponent implements OnInit {
 
     return distance <= radius;
   }
-
   private continueErasing(x: number, y: number) {
     if (!this.ctx || !this.isDrawing) return;
     this.drawPath.push({ x, y });
@@ -682,11 +687,9 @@ export class AppDrawComponent implements OnInit {
     this.drawPath.push({ x, y });
     this.ctx.lineTo(x, y);
     this.ctx.stroke();
-    // Restore the context
     this.ctx.restore();
     this.ctx.globalCompositeOperation = 'source-over';
 
-    // Add erase action to drawing elements and history
     this.drawingElements.push({
       type: 'erease',
       data: {
@@ -709,32 +712,15 @@ export class AppDrawComponent implements OnInit {
 
   handleMouseDown(event: MouseEvent) {
     if (!this.ctx) return;
+    const { clientX, clientY } = this.getMouseCoordinates(event);
 
-    // Check if panning is activated (either pan tool is selected or shift key is pressed)
-    const isPanningActivated = this.tool === Tools.pan || event.shiftKey;
-
-    if (isPanningActivated) {
-      // Prevent default to stop any other interactions
-      event.preventDefault();
-
-      // Change cursor to in
-      // dicate panning
+    if (this.tool === Tools.pan || event.shiftKey) {
+      // event.preventDefault();
       this.canvasRef.nativeElement.style.cursor = 'grabbing';
-
-      // Get the original mouse coordinates without scaling
-      const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-      const rawX = event.clientX - rect.left;
-      const rawY = event.clientY - rect.top;
-
-      console.log('Panning Position', rawX, rawY);
-      // Start panning
       this.isPanning = true;
-      this.lastPanPosition = { x: rawX, y: rawY };
-
+      this.lastPanPosition = { x: clientX, y: clientY };
       return;
     }
-
-    const { clientX, clientY } = this.getMouseCoordinates(event);
 
     // Rest of the existing mouse down logic
     for (const bbox of this.boundingBoxes) {
@@ -828,8 +814,8 @@ export class AppDrawComponent implements OnInit {
       const deltaY = clientY - this.lastPanPosition.y;
 
       // Update pan offset
-      this.panOffset.x += deltaX;
-      this.panOffset.y += deltaY;
+      this.panOffset.x + deltaX;
+      this.panOffset.y + deltaY;
 
       // Update last pan position
       this.lastPanPosition = { x: clientX, y: clientY };
@@ -857,7 +843,7 @@ export class AppDrawComponent implements OnInit {
         break;
     }
   }
-  
+
   handleMouseUp(event: MouseEvent) {
     if (!this.ctx) return;
 
@@ -866,8 +852,6 @@ export class AppDrawComponent implements OnInit {
       this.isPanning = false;
       this.lastPanPosition = null;
       this.canvasRef.nativeElement.style.cursor = 'grab';
-      // this.ctx.restore();
-      // this.resetPan()
       return;
     }
 
@@ -901,9 +885,9 @@ export class AppDrawComponent implements OnInit {
   }
   private updateCanvasCursor() {
     if (!this.canvasRef) return;
-    
+
     const canvas = this.canvasRef.nativeElement;
-    
+
     switch (this.tool) {
       case Tools.pencil:
       case Tools.rectangle:
@@ -925,8 +909,6 @@ export class AppDrawComponent implements OnInit {
   setPencilColor(color: string) {
     this.pencilColor = color;
   }
-
-  // Method to set pencil line width
   setPencilLineWidth(width: number) {
     this.pencilLineWidth = width;
   }
@@ -958,13 +940,15 @@ export class AppDrawComponent implements OnInit {
     if (zoomDelta === 0) {
       // Reset to 100%
       this.scale = 1;
-      console.log('reset zoom');
     } else {
-      // Adjust scale with limits
-      this.scale = Math.min(Math.max(this.scale + zoomDelta, 0.1), 2);
-      console.log('zoom level:', this.scale);
+      // Calculate new scale with limits
+      const newScale = Math.min(Math.max(this.scale + zoomDelta, 0.1), 2);
+      
+      // Update scale
+      this.scale = newScale;
     }
-    // Redraw canvas with new scale
+  
+    // Force redraw with new scale
     this.drawAllElements();
   }
 
@@ -978,7 +962,6 @@ export class AppDrawComponent implements OnInit {
   setTool(tool: Tools) {
     this.tool = tool;
   }
-
 
   // Call this method whenever the tool changes
   onToolChange(newTool: Tools) {
@@ -1061,7 +1044,6 @@ export class AppDrawComponent implements OnInit {
     }
     if (event.key === 'i' || event.key === 'I' || event.key === '1') {
       this.setTool(Tools.ImportImage);
-
     }
     if (event.key === 'b' || event.key === 'B' || event.key === '2') {
       this.setTool(Tools.boundingBox);
@@ -1076,6 +1058,6 @@ export class AppDrawComponent implements OnInit {
     if (event.key === 'Escape' || event.key === '8') {
       this.setTool(Tools.selection);
     }
-9  }
+    9;
+  }
 }
-
