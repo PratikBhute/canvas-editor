@@ -6,6 +6,7 @@
       [tool]="tool"
       (toolChange)="setTool($event)"
       (imageUpload)="handleImageUpload($event)"
+      (downloadRequest)="handleDownloadClick()"
     ></app-action-bar>
 
     <div class="draw-container">
@@ -19,25 +20,11 @@
       ></app-control-panel>
     </div>
 
-    <!-- <textarea
-    #textArea
-    *ngIf="tool === toolText"
-    class="text-input"
-    [style.font]="24 * scale + 'px sans-serif'"
-    style="position: absolute; display: none;"
-  ></textarea> -->
-    <!-- <textarea
-      #textArea
-      class="text-input"
-      [style.font]="24 * scale + 'px sans-serif'"
-    ></textarea> -->
-
     <canvas
       #canvas
       (mousedown)="handleMouseDown($event)"
       (mousemove)="handleMouseMove($event)"
       (mouseup)="handleMouseUp($event)"
-      class="canvas"
     ></canvas>
   </div>
 </div>

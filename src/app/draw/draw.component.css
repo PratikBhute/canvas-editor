@@ -19,17 +19,17 @@ canvas {
 }
 
 /* Desktop Screens */
-@media screen and (min-width: 1200px) {
+/* @media screen and (min-width: 1200px) {
   canvas {
     width: 1300px;
     height: 800px;
     max-width: 100%;
     max-height: 97vh;
   }
-}
+} */
 
 /* Laptop Screens */
-@media screen and (min-width: 992px) and (max-width: 1199px) {
+/* @media screen and (min-width: 992px) and (max-width: 1199px) {
   canvas {
     width: 1000px;
     height: 700px;
@@ -39,16 +39,16 @@ canvas {
 }
 
 /* Tablet Screens */
-@media screen and (min-width: 768px) and (max-width: 991px) {
+/* @media screen and (min-width: 768px) and (max-width: 991px) {
   canvas {
     width: 90vw;
     height: 600px;
     max-height: 120vh;
   }
-}
+} */ */
 
 /* Mobile Landscape */
-@media screen and (min-width: 576px) and (max-width: 767px) {
+/* @media screen and (min-width: 576px) and (max-width: 767px) {
   canvas {
     width: 95vw;
     height: 915px;
@@ -57,13 +57,13 @@ canvas {
 }
 
 /* Mobile Portrait */
-@media screen and (max-width: 575px) {
+/* @media screen and (max-width: 575px) {
   canvas {
     width: 100vw;
     height: 400px;
     max-height: 50vh;
   }
-}
+} */ */
 
 /* Ensure canvas is responsive and maintains aspect ratio */
 canvas {

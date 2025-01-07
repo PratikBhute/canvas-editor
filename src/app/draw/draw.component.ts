@@ -15,7 +15,7 @@ import {
   PointType,
   // ToolCursors,
   Tools,
-  ToolsType
+  ToolsType,
 } from '../types/draw-types';
 
 @Component({
@@ -59,6 +59,10 @@ export class AppDrawComponent implements OnInit {
   private lastPanPosition: { x: number; y: number } | null = null;
   //  private setlastPanPosition: { x: number; y: number; };
 
+  // Add these class properties
+  currentImageWidth: number = 0;
+  currentImageHeight: number = 0;
+
   constructor(private historyService: HistoryService) {
     this.tool = this.initialTool;
   }
@@ -67,59 +71,80 @@ export class AppDrawComponent implements OnInit {
     this.setupCanvas();
     this.setupUndoRedoListener();
     this.setupEventListeners();
+    this.setUpDisableRifhtClick();
   }
   private setupEventListeners() {
     window.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
+  }
+
+  private setUpDisableRifhtClick() {
+    // Disable right-click on the canvas
+    this.canvasRef.nativeElement.addEventListener(
+      'contextmenu',
+      (event: MouseEvent) => {
+        event.preventDefault();
+        console.log('Right-click disabled on canvas');
+      }
+    );
   }
 
   private setupCanvas() {
     const previewCanvas = document.createElement('canvas');
     const canvas = this.canvasRef.nativeElement;
     this.ctx = canvas.getContext('2d')!;
+
+    // Set canvas width to window width
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+    // Determine canvas height based on conditions
+
+    // if (
+    //   this.currentImageWidth &&
+    //   this.drawingElements.some((element) => element.type === 'image')
+    // ) {
+    //   if (this.currentImageWidth > window.innerWidth) {
+    //     // If image width is greater than window width, use image width
+    //     canvas.width = this.currentImageWidth;
+    //   } else {
+    //     // If image width is less than or equal to window width, use window width
+    //     canvas.width = window.innerWidth;
+    //   }
+    // } else {
+    //   // If no image exists, use window width
+    //   canvas.width = window.innerWidth;
+    // }
+
+    if (
+      this.currentImageHeight &&
+      this.drawingElements.some((element) => element.type === 'image')
+    ) {
+      if (this.currentImageHeight <= window.innerHeight) {
+        canvas.height = window.innerHeight;
+      } else {
+        canvas.height = this.currentImageHeight;
+      }
+    } else {
+      canvas.height = window.innerHeight;
+    }
+
     this.previewCtx = previewCanvas.getContext('2d')!;
+
+    console.log('Canvas dimensions set to:', {
+      width: canvas.width,
+      height: canvas.height,
+      imageHeight: this.currentImageHeight,
+      windowHeight: window.innerHeight,
+    });
   }
 
   private setupUndoRedoListener() {
     window.addEventListener('keydown', this.handleUndoRedo);
   }
-
-  private smoothPath(path: PointType[], smoothingFactor: number = 0.3): PointType[] {
-    if (path.length < 3) return path; // No smoothing needed for less than 3 points
-  
-    const smoothedPath: PointType[] = [];
-    smoothedPath.push(path[0]); // Keep the first point
-  
-    for (let i = 1; i < path.length - 1; i++) {
-      const prev = path[i - 1];
-      const curr = path[i];
-      const next = path[i + 1];
-  
-      // Calculate control points
-      const controlPoint1 = {
-        x: curr.x + smoothingFactor * (next.x - prev.x),
-        y: curr.y + smoothingFactor * (next.y - prev.y),
-      };
-  
-      const controlPoint2 = {
-        x: next.x - smoothingFactor * (next.x - prev.x),
-        y: next.y - smoothingFactor * (next.y - prev.y),
-      };
-  
-      // Add a smoothed curve
-      smoothedPath.push(controlPoint1, controlPoint2, next);
-    }
-  
-    return smoothedPath;
-  }
-  
-
   private drawAllElements() {
     if (!this.ctx) return;
 
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-   
+
     this.ctx.save();
     // Apply scale first, then translation
     this.ctx.translate(this.panOffset.x, this.panOffset.y);
@@ -194,7 +219,6 @@ export class AppDrawComponent implements OnInit {
     });
     this.ctx.restore();
   }
-
   // Optional: Methods to manage bounding boxes
   deleteBoundingBox(id: string) {
     const index = this.boundingBoxes.findIndex((bbox) => bbox.id === id);
@@ -221,38 +245,16 @@ export class AppDrawComponent implements OnInit {
   getMouseCoordinates(event: MouseEvent) {
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
-
-    // Calculate the scaling factors
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    // Raw mouse position on canvas (without scaling)
-    const rawMouseX = (event.clientX - rect.left) * scaleX;
-    const rawMouseY = (event.clientY - rect.top) * scaleY;
+    // Get raw coordinates relative to canvas
+    const rawX = (event.clientX - rect.left) * scaleX;
+    const rawY = (event.clientY - rect.top) * scaleY;
 
     // Adjust for pan and scale
-    // const adjustedX = (rawMouseX - this.panOffset.x) / this.scale;
-    // const adjustedY = (rawMouseY - this.panOffset.y) / this.scale;
-
-    // Adjust for both pan and zoom
-    const adjustedX = rawMouseX / this.scale - this.panOffset.x / this.scale;
-    const adjustedY = rawMouseY / this.scale - this.panOffset.y / this.scale;
-
-    // console.log('Mouse Coordinates Diagnostic:', {
-    //   clientX: event.clientX,
-    //   clientY: event.clientY,
-    //   rectLeft: rect.left,
-    //   rectTop: rect.top,
-    //   scaleX: scaleX,
-    //   scaleY: scaleY,
-    //   rawMouseX: rawMouseX,
-    //   rawMouseY: rawMouseY,
-    //   panOffsetX: this.panOffset.x,
-    //   panOffsetY: this.panOffset.y,
-    //   currentScale: this.scale,
-    //   adjustedX: adjustedX,
-    //   adjustedY: adjustedY,
-    // });
+    const adjustedX = (rawX - this.panOffset.x) / this.scale;
+    const adjustedY = (rawY - this.panOffset.y) / this.scale;
 
     return { clientX: adjustedX, clientY: adjustedY };
   }
@@ -299,7 +301,6 @@ export class AppDrawComponent implements OnInit {
   }
 
   private handleGlobalKeydown(event: KeyboardEvent) {
-  
     if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
       event.preventDefault();
       this.undo();
@@ -313,6 +314,109 @@ export class AppDrawComponent implements OnInit {
       event.preventDefault();
       this.redo();
     }
+  }
+  exportCanvas(format: 'png' | 'jpg' = 'png') {
+    const canvas = this.canvasRef.nativeElement;
+
+    // Create a temporary canvas with the exact content
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+
+    if (!tempCtx) return;
+
+    // Set the temporary canvas to the same size
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+
+    // Fill with white background (optional - only needed for jpg)
+    if (format === 'jpg') {
+      tempCtx.fillStyle = '#FFFFFF';
+      tempCtx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Draw the current canvas state onto the temporary canvas
+    tempCtx.save();
+    tempCtx.translate(this.panOffset.x, this.panOffset.y);
+    tempCtx.scale(this.scale, this.scale);
+
+    // Draw all elements
+    this.drawingElements.forEach((element) => {
+      tempCtx.beginPath();
+      tempCtx.strokeStyle = element.data.color || '#000000';
+      tempCtx.lineWidth = element.data.lineWidth || 2;
+      tempCtx.lineCap = 'round';
+      tempCtx.lineJoin = 'round';
+
+      switch (element.type) {
+        case 'pencil':
+          if (element.data.path && element.data.path.length > 1) {
+            tempCtx.moveTo(element.data.path[0].x, element.data.path[0].y);
+            element.data.path.slice(1).forEach((point) => {
+              tempCtx.lineTo(point.x, point.y);
+            });
+            tempCtx.stroke();
+          }
+          break;
+        case 'rectangle':
+          if (element.data.start && element.data.end) {
+            const width = element.data.end.x - element.data.start.x;
+            const height = element.data.end.y - element.data.start.y;
+            tempCtx.strokeRect(
+              element.data.start.x,
+              element.data.start.y,
+              width,
+              height
+            );
+          }
+          break;
+        case 'line':
+          if (element.data.start && element.data.end) {
+            tempCtx.moveTo(element.data.start.x, element.data.start.y);
+            tempCtx.lineTo(element.data.end.x, element.data.end.y);
+            tempCtx.stroke();
+          }
+          break;
+        case 'image':
+          if (element.data.image && element.data.position) {
+            tempCtx.drawImage(
+              element.data.image,
+              element.data.position.x,
+              element.data.position.y,
+              element.data.size?.width || element.data.image.width,
+              element.data.size?.height || element.data.image.height
+            );
+          }
+          break;
+        case 'boundingBox':
+          const bbox = element.data as BoundingBox;
+          const width = bbox.end.x - bbox.start.x;
+          const height = bbox.end.y - bbox.start.y;
+          tempCtx.strokeStyle = bbox.color || this.boundingBoxColor;
+          tempCtx.strokeRect(bbox.start.x, bbox.start.y, width, height);
+          tempCtx.fillStyle = bbox.color || this.boundingBoxColor;
+          tempCtx.font = '23px Arial';
+          tempCtx.fillText(bbox.title, bbox.start.x, bbox.start.y - 8);
+          break;
+      }
+    });
+
+    tempCtx.restore();
+
+    // Create download link
+    const link = document.createElement('a');
+    link.download = `canvas-export-${new Date().toISOString()}.${format}`;
+    link.href = tempCanvas.toDataURL(`image/${format}`);
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Add this method to handle the download tool click
+  handleDownloadClick() {
+    // You can add a dialog here to choose format if desired
+    this.exportCanvas('png');
   }
 
   // Call saving method
@@ -411,7 +515,7 @@ export class AppDrawComponent implements OnInit {
     // Save to history
     this.finishDrawing();
   }
- //  Start Continue and Finish Method for Pencil Sketch
+  //  Start Continue and Finish Method for Pencil Sketch
   private startPencilDrawing(x: number, y: number) {
     this.isDrawing = true;
     this.drawPath = [{ x, y }];
@@ -439,7 +543,7 @@ export class AppDrawComponent implements OnInit {
     this.ctx.lineTo(x, y);
     this.ctx.stroke();
   }
-  
+
   private finishPencilDrawing(x: number, y: number) {
     if (!this.ctx) return;
     this.drawPath.push({ x, y });
@@ -470,7 +574,7 @@ export class AppDrawComponent implements OnInit {
     this.finishDrawing();
   }
 
-   //  Start Continue and finish Method for Rectangle
+  //  Start Continue and finish Method for Rectangle
   private startRectangleDrawing(x: number, y: number) {
     this.isDrawing = true;
     this.startPoint = { x, y };
@@ -715,10 +819,14 @@ export class AppDrawComponent implements OnInit {
     const { clientX, clientY } = this.getMouseCoordinates(event);
 
     if (this.tool === Tools.pan || event.shiftKey) {
-      // event.preventDefault();
-      this.canvasRef.nativeElement.style.cursor = 'grabbing';
       this.isPanning = true;
-      this.lastPanPosition = { x: clientX, y: clientY };
+      this.canvasRef.nativeElement.style.cursor = 'grabbing';
+      // Store the initial mouse position without adjustments
+      const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+      this.lastPanPosition = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
       return;
     }
 
@@ -768,62 +876,33 @@ export class AppDrawComponent implements OnInit {
   handleMouseMove(event: MouseEvent) {
     if (!this.ctx) return;
 
-    // Check if panning is active
-    const isPanningActivated = this.tool === Tools.pan || event.shiftKey;
-
-    if (isPanningActivated && this.isPanning && this.lastPanPosition) {
-      // Prevent default to stop any other interactions
-      event.preventDefault();
-
-      // Get the original mouse coordinates without scaling
+    if (
+      this.isPanning &&
+      this.lastPanPosition &&
+      (this.tool === Tools.pan || event.shiftKey)
+    ) {
       const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-      const rawX = event.clientX - rect.left;
-      const rawY = event.clientY - rect.top;
+      const currentX = event.clientX - rect.left;
+      const currentY = event.clientY - rect.top;
 
-      console.log('Panning Position Moving', rawX, rawY);
+      // Calculate the actual delta in screen pixels
+      const deltaX = currentX - this.lastPanPosition.x;
+      const deltaY = currentY - this.lastPanPosition.y;
 
-      // Calculate the delta movement
-      const deltaX = rawX - this.lastPanPosition.x;
-      const deltaY = rawY - this.lastPanPosition.y;
-
-      // Update pan offset
+      // Update the pan offset
       this.panOffset.x += deltaX;
       this.panOffset.y += deltaY;
 
-      // Update last pan position
-      this.lastPanPosition = { x: rawX, y: rawY };
+      // Update the last position
+      this.lastPanPosition = { x: currentX, y: currentY };
 
-      // Redraw all elements with new pan offset
+      // Redraw everything with the new offset
       this.drawAllElements();
-
       return;
     }
-
     if (!this.isDrawing) return;
 
     const { clientX, clientY } = this.getMouseCoordinates(event);
-
-    // Panning functionality
-    if (
-      (this.tool === Tools.pan || event.shiftKey) &&
-      this.isPanning &&
-      this.lastPanPosition
-    ) {
-      // Calculate pan delta
-      const deltaX = clientX - this.lastPanPosition.x;
-      const deltaY = clientY - this.lastPanPosition.y;
-
-      // Update pan offset
-      this.panOffset.x + deltaX;
-      this.panOffset.y + deltaY;
-
-      // Update last pan position
-      this.lastPanPosition = { x: clientX, y: clientY };
-
-      // Redraw all elements with new pan offset
-      this.drawAllElements();
-      return;
-    }
 
     switch (this.tool) {
       case Tools.pencil:
@@ -914,7 +993,7 @@ export class AppDrawComponent implements OnInit {
   }
   // Utility methods
   undo() {
-    if (this.currentHistoryIndex > 0) {
+    if (this.currentHistoryIndex >= 0) {
       this.currentHistoryIndex--;
       this.restoreHistoryState();
     }
@@ -943,11 +1022,11 @@ export class AppDrawComponent implements OnInit {
     } else {
       // Calculate new scale with limits
       const newScale = Math.min(Math.max(this.scale + zoomDelta, 0.1), 2);
-      
+
       // Update scale
       this.scale = newScale;
     }
-  
+
     // Force redraw with new scale
     this.drawAllElements();
   }
@@ -974,34 +1053,56 @@ export class AppDrawComponent implements OnInit {
     reader.onload = (e: any) => {
       const uploadedImage = new Image();
       uploadedImage.onload = () => {
-        // Create a new image drawing element
+        // Store the dimensions as class properties
+        this.currentImageWidth = uploadedImage.width;
+        this.currentImageHeight = uploadedImage.height;
+
+        // Create the image element
         const imageElement: DrawingElement = {
           type: 'image',
           data: {
             image: uploadedImage,
-            position: { x: 50, y: 50 }, // Default position
+            position: { x: 50, y: 50 },
             size: {
-              width: Math.min(uploadedImage.width, this.ctx!.canvas.width / 2),
-              height: Math.min(
-                uploadedImage.height,
-                this.ctx!.canvas.height / 2
-              ),
+              width: this.currentImageWidth,
+              height: this.currentImageHeight,
             },
           },
         };
 
-        // Add to drawing elements
+        // Add image to drawing elements
         this.drawingElements.push(imageElement);
 
-        // Redraw canvas
-        this.drawAllElements();
+        // Update canvas height for the new image
+        this.setupCanvas();
 
-        // Save to history
+        // Redraw everything
+        this.drawAllElements();
         this.finishDrawing();
       };
       uploadedImage.src = e.target.result as string;
     };
     reader.readAsDataURL(file);
+  }
+  // Add method to handle image removal
+  private removeImage(imageElement: DrawingElement) {
+    // Remove the image from drawing elements
+    this.drawingElements = this.drawingElements.filter(
+      (element) => element !== imageElement
+    );
+
+    // Reset image dimensions if no images remain
+    if (!this.drawingElements.some((element) => element.type === 'image')) {
+      this.currentImageWidth = 0;
+      this.currentImageHeight = 0;
+
+      // Reset canvas height to window height
+      this.setupCanvas();
+    }
+
+    // Redraw the canvas
+    this.drawAllElements();
+    this.finishDrawing();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -1026,6 +1127,12 @@ export class AppDrawComponent implements OnInit {
       const newScale = this.scale * (1 - deltaY * zoomFactor);
       this.handleZoom(newScale - this.scale);
     }
+  }
+
+  @HostListener('contextmenu', ['$event'])
+  disableRightClick(event: MouseEvent) {
+    event.preventDefault(); // Disable the right-click
+    console.log('Right-click disabled on canvas');
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -1054,10 +1161,16 @@ export class AppDrawComponent implements OnInit {
     if (event.key === 't' || event.key === 'T' || event.key === '9') {
       this.setTool(Tools.text);
     }
+    if (
+      ((event.shiftKey || event.metaKey) && event.key === 's') ||
+      event.key === 'S'
+    ) {
+      this.handleDownloadClick();
+    }
+
     // ??i want to used esc kye here
     if (event.key === 'Escape' || event.key === '8') {
       this.setTool(Tools.selection);
     }
-    9;
   }
 }

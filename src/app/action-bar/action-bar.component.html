@@ -6,6 +6,8 @@
     (click)="setTool(t.value)"
   >
     <ng-container [ngSwitch]="t.value">
+      <mat-icon *ngSwitchCase="toolsEnum.download" title="Download">download</mat-icon>
+
       <mat-icon *ngSwitchCase="toolsEnum.boundingBox" title="Bounding Box">crop_square</mat-icon>
       <mat-icon *ngSwitchCase="toolsEnum.pan" title="Pan">pan_tool</mat-icon>
       <mat-icon *ngSwitchCase="toolsEnum.selection" title="select">mouse</mat-icon>

@@ -8,6 +8,16 @@ export enum Tools {
   boundingBox = 'boundingBox',
   pan = 'pan',
   ImportImage = 'ImportImage',
+  download = 'download'
+}
+
+export interface TextElement {
+  id: string;
+  text: string;
+  position: PointType;
+  isEditing?: boolean;
+  fontSize?: number;
+  color_text?: string;
 }
 
 export interface BoundingBox {
@@ -47,7 +57,8 @@ export type ActionsType =
   | 'resizing'
   | 'panning'
   | 'multi_moving'
-  | 'selection';
+  | 'selection'
+  | 'download';
 
 export interface PointType {
   x: number;
@@ -77,6 +88,7 @@ export interface ExtendedElementType extends ElementType {
   xOffsets?: number[];
   yOffsets?: number[];
 }
+
 export interface DrawingElement {
   type:
     | 'pencil'
@@ -86,8 +98,10 @@ export interface DrawingElement {
     | 'image'
     | 'boundingBox'
     | 'text'
-    | 'pan';
+    | 'pan'
+    | 'download'
   data: {
+    textElement?: TextElement;
     path?: PointType[];
     start?: PointType;
     end?: PointType;
@@ -101,12 +115,4 @@ export interface DrawingElement {
     id?: string;
     font?: string;
   };
-}
-export interface TextElement {
-  id: string;
-  text: string;
-  position: PointType;
-  font: string;
-  color: string;
-  isSelected: boolean;
 }

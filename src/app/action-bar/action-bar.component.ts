@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import {  Tools, ToolsType } from '../types/draw-types';
+import { Tools, ToolsType } from '../types/draw-types';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 
@@ -8,14 +8,15 @@ import { CommonModule } from '@angular/common';
   templateUrl: './action-bar.component.html',
   styleUrls: ['./action-bar.component.css'],
   standalone: true,
-  imports: [MatIconModule, CommonModule]
+  imports: [MatIconModule, CommonModule],
 })
 export class ActionBarComponent {
   @Input() tool: ToolsType = Tools.selection;
   @Output() toolChange = new EventEmitter<ToolsType>();
   @Output() imageUpload = new EventEmitter<File>();
-
+  @Output() downloadRequest = new EventEmitter<void>();
   toolsEnum = Tools;
+  // downloadRequest: any;
   // el: any;
 
   // ngOnChanges(selectedTool: ToolsType) {
@@ -25,12 +26,17 @@ export class ActionBarComponent {
   // }
 
   setTool(selectedTool: ToolsType) {
-    // Emit the selected tool to the parent component
-    this.toolChange.emit(selectedTool);
+    if (selectedTool === Tools.download) {
+      this.downloadRequest.emit();
+    } else {
+      this.toolChange.emit(selectedTool);
+    }
   }
 
   handleImageButtonClick() {
-    const fileInput = document.getElementById('imageUploadInput') as HTMLInputElement;
+    const fileInput = document.getElementById(
+      'imageUploadInput'
+    ) as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
     }
@@ -50,5 +56,4 @@ export class ActionBarComponent {
   //     this.el.nativeElement.style.cursor = ToolCursors[this.tool] || 'default';
   //   }
   // }
-
 }
